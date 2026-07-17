@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Status Records</title>
+  <meta name="description" content="Project status record list powered by Supabase">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-app: #0b0f19;
+      --bg-sidebar: #111827;
+      --bg-card: rgba(20, 29, 47, 0.65);
+      --border-color: rgba(255,255,255,0.08);
+      --border-color-hover: rgba(99,102,241,0.4);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-light: rgba(99,102,241,0.15);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --color-open: #f59e0b;
+      --color-open-bg: rgba(245,158,11,0.15);
+      --color-progress: #3b82f6;
+      --color-progress-bg: rgba(59,130,246,0.15);
+      --color-closed: #10b981;
+      --color-closed-bg: rgba(16,185,129,0.15);
+      --color-bug: #ef4444;
+      --card-shadow: 0 8px 32px rgba(0,0,0,0.37);
+      --transition-speed: 0.25s;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Plus Jakarta Sans','Outfit',system-ui,sans-serif;background:var(--bg-app);color:var(--text-main);line-height:1.5;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+    ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:var(--bg-app)}::-webkit-scrollbar-thumb{background:#1f2937;border-radius:4px}
+    .app-container{display:flex;flex-direction:column;min-height:100vh;padding:1.5rem;max-width:100%;gap:1.5rem}
+    .app-header{display:flex;justify-content:space-between;align-items:center;padding:1.25rem 2rem;background:var(--bg-card);backdrop-filter:blur(12px);border:1px solid var(--border-color);border-radius:16px;box-shadow:var(--card-shadow)}
+    .header-logo{display:flex;align-items:center;gap:1rem}
+    .logo-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--primary),#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.25rem;box-shadow:0 4px 15px rgba(99,102,241,0.4)}
+    .logo-text h1{font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,#fff,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .logo-text p{font-size:0.8rem;color:var(--text-muted);margin-top:2px}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid var(--border-color)}
+    .badge-success{background:rgba(16,185,129,0.15);color:#10b981;border-color:rgba(16,185,129,0.3)}
+    .badge-danger{background:rgba(239,68,68,0.15);color:#f87171;border-color:rgba(239,68,68,0.3)}
+    .header-actions{display:flex;gap:0.75rem;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.2rem;border-radius:10px;font-size:0.875rem;font-weight:600;cursor:pointer;transition:all var(--transition-speed) ease;border:none;outline:none;font-family:inherit}
+    .btn-primary{background:linear-gradient(135deg,var(--primary),#8b5cf6);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,0.35)}
+    .btn-primary:hover{background:linear-gradient(135deg,var(--primary-hover),#7c3aed);transform:translateY(-1px)}
+    .btn-secondary{background:rgba(255,255,255,0.05);color:var(--text-main);border:1px solid var(--border-color)}
+    .btn-secondary:hover{background:rgba(255,255,255,0.1)}
+    .btn-danger{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3)}
+    .btn-danger:hover:not(:disabled){background:rgba(239,68,68,0.25)}
+    .btn-danger:disabled{opacity:0.3;cursor:not-allowed}
+    .btn-link-toggle{background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border-color);cursor:pointer;border-radius:8px;font-size:0.8rem;display:inline-flex;align-items:center;gap:6px;font-family:inherit;padding:5px 12px;transition:all var(--transition-speed) ease}
+    .btn-link-toggle:hover{color:var(--primary);border-color:var(--primary)}
+
+    /* Dashboard layout */
+    .dashboard-content{display:grid;grid-template-columns:280px 1fr;gap:1.5rem;align-items:start}
+    .dashboard-content.filters-hidden{grid-template-columns:1fr}
+    .dashboard-content.filters-hidden .filters-sidebar{display:none}
+
+    /* Filters sidebar */
+    .filters-sidebar{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1.25rem;box-shadow:var(--card-shadow);position:sticky;top:1.5rem;display:flex;flex-direction:column;gap:1rem}
+    .sidebar-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:0.75rem}
+    .sidebar-header h3{font-size:0.9rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:0.5rem}
+    .filter-group{display:flex;flex-direction:column;gap:0.4rem}
+    .filter-group label{font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
+    .filter-group select{width:100%;padding:0.45rem 0.75rem;background:#1a2235;color:var(--text-main);border:1px solid var(--border-color);border-radius:8px;font-size:0.825rem;cursor:pointer;font-family:inherit}
+    .slider-control{display:flex;flex-direction:column;gap:0.35rem}
+    .slider-control input[type="range"]{width:100%;accent-color:var(--primary);cursor:pointer}
+    .slider-labels{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted)}
+    .slider-value{font-size:0.75rem;color:var(--primary);font-weight:600}
+
+    /* Multiselect */
+    .multiselect-dropdown{position:relative}
+    .dropdown-btn{width:100%;padding:0.45rem 0.75rem;background:#1a2235;color:var(--text-main);border:1px solid var(--border-color);border-radius:8px;font-size:0.825rem;cursor:pointer;text-align:left;font-family:inherit;display:flex;justify-content:space-between;align-items:center}
+    .dropdown-menu-checkboxes{display:none;position:absolute;top:calc(100% + 4px);left:0;width:100%;background:#1a2235;border:1px solid var(--border-color);border-radius:8px;padding:0.5rem;z-index:100;max-height:200px;overflow-y:auto}
+    .multiselect-dropdown.open .dropdown-menu-checkboxes{display:block}
+    .checkbox-option{display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.5rem;border-radius:6px;cursor:pointer;font-size:0.8rem;transition:background var(--transition-speed) ease}
+    .checkbox-option:hover{background:rgba(255,255,255,0.05)}
+    .checkbox-option input[type="checkbox"]{accent-color:var(--primary)}
+
+    /* Table container */
+    .table-container{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;overflow:hidden;box-shadow:var(--card-shadow)}
+    .table-header{display:flex;align-items:center;padding:1.1rem 1.5rem;border-bottom:1px solid var(--border-color);gap:1rem;flex-wrap:wrap}
+    .table-header h3{font-size:0.95rem;font-weight:700;display:flex;align-items:center;gap:0.5rem;white-space:nowrap;flex-shrink:0}
+    .table-header-search{flex:1;min-width:160px}
+    .table-header-search .search-wrapper{width:100%}
+    .table-header-search #globalSearch{width:100%;background:#1a2235;border:1px solid var(--border-color);color:var(--text-main);border-radius:10px;padding:0.55rem 2rem 0.55rem 2.2rem;font-size:0.9rem;font-family:inherit;transition:all var(--transition-speed) ease}
+    .table-header-search #globalSearch:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.15)}
+    .table-header-search .search-wrapper i{font-size:0.85rem}
+    .header-inline-filters{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;flex-shrink:0}
+    .header-inline-filters .multiselect-dropdown .dropdown-btn{background:#1a2235;border:1px solid var(--border-color);color:var(--text-main);border-radius:8px;padding:0.42rem 0.75rem;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;gap:0.4rem;white-space:nowrap;font-family:inherit}
+    .header-inline-filters .multiselect-dropdown .dropdown-btn:hover{border-color:var(--primary);color:var(--primary)}
+    .header-inline-filters .multiselect-dropdown .dropdown-menu-checkboxes{min-width:160px;right:0;left:auto}
+    .search-wrapper{position:relative;display:inline-flex;align-items:center}
+    .search-wrapper i{position:absolute;left:10px;color:var(--text-muted);font-size:0.8rem}
+    #searchClear{position:absolute;right:8px;cursor:pointer;color:var(--text-muted);display:none;background:none;border:none;font-size:0.9rem}
+    .table-wrapper{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:0.85rem}
+    th{padding:0.9rem 1rem;text-align:left;font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;background:rgba(13,19,35,0.6);border-bottom:1px solid var(--border-color);white-space:nowrap;position:sticky;top:0;z-index:2}
+    td{padding:1rem;border-bottom:1px solid var(--border-color);color:var(--text-main);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    tr{background:rgba(20,29,47,0.2);transition:background var(--transition-speed) ease;cursor:pointer}
+    tr:hover{background:rgba(99,102,241,0.06)}
+    .status-pill{display:inline-flex;align-items:center;gap:0.4rem;padding:0.25rem 0.75rem;border-radius:30px;font-size:0.75rem;font-weight:600}
+    .status-pill.open{background:var(--color-open-bg);color:var(--color-open)}
+    .status-pill.in-progress{background:var(--color-progress-bg);color:var(--color-progress)}
+    .status-pill.closed{background:var(--color-closed-bg);color:var(--color-closed)}
+    .status-pill.new{background:rgba(139,92,246,0.15);color:#a78bfa}
+    .priority-pill{display:inline-block;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600}
+    .priority-pill.high{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.2)}
+    .priority-pill.medium{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.2)}
+    .priority-pill.low{background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.2)}
+    .type-pill{display:inline-block;font-size:0.8rem;color:var(--text-muted)}
+    .type-pill.bug{color:#f87171;font-weight:500}
+    .type-pill.feature{color:#34d399;font-weight:500}
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;text-align:center}
+    .empty-icon{font-size:3rem;color:var(--text-muted);margin-bottom:1rem}
+    .hidden{display:none!important}
+    .table-footer{display:flex;justify-content:space-between;align-items:center;padding:0.85rem 1.5rem;border-top:1px solid var(--border-color);flex-wrap:wrap;gap:0.5rem}
+    #recordCount{font-size:0.8rem;color:var(--text-muted)}
+    .page-size-select{background:#1a2235;border:1px solid var(--border-color);color:var(--text-main);border-radius:8px;padding:0.3rem 0.5rem;font-size:0.8rem;cursor:pointer;font-family:inherit}
+    .table-pagination{display:flex;gap:0.35rem;flex-wrap:wrap;align-items:center}
+    .page-btn{background:rgba(255,255,255,0.04);border:1px solid var(--border-color);color:var(--text-main);border-radius:8px;padding:0.35rem 0.6rem;font-size:0.8rem;cursor:pointer;transition:all var(--transition-speed) ease;font-family:inherit}
+    .page-btn:hover:not(:disabled){background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
+    .page-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}
+    .page-btn:disabled{opacity:0.3;cursor:not-allowed}
+    .page-ellipsis{color:var(--text-muted);font-size:0.8rem;padding:0 4px}
+
+    /* Modals */
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:1rem}
+    .modal.show{display:flex}
+    .modal-content{background:#0e1525;border:1px solid var(--border-color);border-radius:20px;width:100%;max-width:1350px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideIn 0.25s ease}
+    @keyframes slideIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-color);flex-shrink:0}
+    .modal-tag{font-size:0.75rem;font-weight:700;padding:0.3rem 0.8rem;border-radius:20px;background:var(--primary-light);color:var(--primary);text-transform:uppercase;letter-spacing:0.5px}
+    .modal-tag.bug-tag{background:rgba(239,68,68,0.15);color:#f87171}
+    .close-modal{background:none;border:none;color:var(--text-muted);font-size:1.5rem;cursor:pointer;line-height:1;padding:0;transition:color var(--transition-speed) ease}
+    .close-modal:hover{color:var(--text-main)}
+    .modal-body{display:grid;grid-template-columns:1fr 380px;overflow:hidden;flex:1}
+    .modal-left-column{padding:1.5rem 2rem;overflow-y:auto;border-right:1px solid var(--border-color);display:flex;flex-direction:column;gap:1rem}
+    .modal-left-column h2{font-size:1.4rem;font-weight:800;color:var(--text-main);line-height:1.3}
+    .modal-section h3{font-size:0.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.5rem}
+    .description-box,.comments-box{background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:10px;padding:1rem;font-size:0.875rem;color:var(--text-muted);line-height:1.6;min-height:80px;white-space:pre-wrap;word-break:break-word}
+    .modal-right-column{padding:1.5rem;overflow-y:auto;background:rgba(0,0,0,0.2)}
+    .side-panel-header{font-size:0.85rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.75rem;border-bottom:1px solid var(--border-color);padding-bottom:0.5rem}
+    .modal-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+    .meta-item{background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;padding:0.65rem 0.85rem;display:flex;flex-direction:column;gap:4px}
+    .meta-label{font-size:0.7rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px}
+    .meta-val{font-size:0.875rem;color:var(--text-main);font-weight:500;word-break:break-word}
+    @media(max-width:992px){.modal-body{grid-template-columns:1fr}.modal-left-column,.modal-right-column{overflow-y:visible;padding-right:1rem}}
+
+    /* Form modal */
+    .form-modal-content{max-width:750px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .form-field{display:flex;flex-direction:column;gap:0.35rem}
+    .form-field.full-width{grid-column:1/-1}
+    .form-field label{font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
+    .form-field input,.form-field select,.form-field textarea{width:100%;background:#1a2235;border:1px solid var(--border-color);color:var(--text-main);border-radius:8px;padding:0.55rem 0.85rem;font-size:0.85rem;font-family:inherit;transition:border-color var(--transition-speed) ease;resize:vertical}
+    .form-field input:focus,.form-field select:focus,.form-field textarea:focus{outline:none;border-color:var(--primary)}
+    .form-body{padding:1.25rem 1.5rem;overflow-y:auto;max-height:65vh}
+
+    /* Fullscreen Modal */
+    .modal.fullscreen-modal{padding:0}
+    .modal.fullscreen-modal .modal-content{width:100vw;height:100vh;max-width:100vw;max-height:100vh;border-radius:0;border:none;height:100%}
+    .modal.fullscreen-modal .form-body{max-height:calc(100vh - 130px);height:calc(100vh - 130px);flex:1;padding:2rem 3rem}
+    
+    /* Split layout */
+    .form-split-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    .form-main-col {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .form-side-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media(min-width: 992px) {
+      .modal.fullscreen-modal .form-body {
+        overflow: hidden;
+      }
+      .form-split-container {
+        grid-template-columns: 70% 30%;
+        gap: 2rem;
+        height: 100%;
+      }
+      .form-main-col {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+      .form-side-col {
+        grid-template-columns: 1fr 1fr;
+        padding-left: 1.5rem;
+        border-left: 1px solid var(--border-color);
+        align-content: start;
+        height: 100%;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+      }
+    }
+
+    /* Loading */
+    .loading-overlay{position:fixed;inset:0;background:var(--bg-app);display:flex;justify-content:center;align-items:center;z-index:2000;transition:opacity 0.3s ease}
+    .spinner{width:50px;height:50px;border:3px solid rgba(99,102,241,0.1);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1.5rem;box-shadow:0 0 15px rgba(99,102,241,0.2)}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .spinner-container{text-align:center}
+    .spinner-container p{color:var(--text-muted);font-size:0.85rem;margin-top:4px}
+    .spinner-container h3{color:var(--text-main);font-size:1rem}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .animate-fade-in{animation:fadeIn 0.4s ease both}
+    .delay-100{animation-delay:0.1s}
+    .delay-150{animation-delay:0.15s}
+    .delay-200{animation-delay:0.2s}
+
+    /* ── Login Screen ── */
+    .login-overlay{position:fixed;inset:0;background:var(--bg-app);z-index:3000;display:flex;align-items:center;justify-content:center;padding:1rem}
+    .login-overlay.hidden{display:none!important}
+    .login-card{background:rgba(20,29,47,0.9);border:1px solid var(--border-color);border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,0.6);backdrop-filter:blur(16px);text-align:center;animation:slideIn 0.35s ease}
+    .login-logo{width:64px;height:64px;background:linear-gradient(135deg,var(--primary),#8b5cf6);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#fff;margin:0 auto 1.5rem;box-shadow:0 8px 24px rgba(99,102,241,0.45)}
+    .login-card h2{font-size:1.5rem;font-weight:800;color:var(--text-main);margin-bottom:0.4rem}
+    .login-card p.sub{font-size:0.85rem;color:var(--text-muted);margin-bottom:2rem;line-height:1.5}
+    .login-field{position:relative;margin-bottom:1rem;text-align:left}
+    .login-field label{display:block;font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem}
+    .login-field input{width:100%;background:#111827;border:1px solid var(--border-color);color:var(--text-main);border-radius:10px;padding:0.75rem 1rem 0.75rem 2.5rem;font-size:0.9rem;font-family:inherit;transition:border-color var(--transition-speed) ease}
+    .login-field input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.2)}
+    .login-field .field-icon{position:absolute;left:0.85rem;top:2.2rem;color:var(--text-muted);font-size:0.85rem}
+    .login-btn{width:100%;padding:0.8rem;border-radius:10px;background:linear-gradient(135deg,var(--primary),#8b5cf6);color:#fff;font-size:0.95rem;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:all var(--transition-speed) ease;margin-top:0.5rem;display:flex;align-items:center;justify-content:center;gap:0.5rem}
+    .login-btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(99,102,241,0.4)}
+    .login-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+    .login-msg{font-size:0.82rem;margin-top:1rem;padding:0.65rem 1rem;border-radius:8px;display:none}
+    .login-msg.success{background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.25);display:block}
+    .login-msg.error{background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25);display:block}
+    .login-step{transition:all 0.25s ease}
+    .otp-hint{font-size:0.78rem;color:var(--text-muted);margin-top:0.75rem;line-height:1.5}
+    .user-pill{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:20px;padding:0.3rem 0.85rem;font-size:0.8rem;color:#a5b4fc;font-weight:500}
+    .user-pill i{font-size:0.75rem}
+    .btn-logout{background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:0.4rem 0.85rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all var(--transition-speed) ease;display:flex;align-items:center;gap:0.4rem}
+    .btn-logout:hover{background:rgba(239,68,68,0.2)}
+    .owner-info-text{font-size:0.72rem;color:#f87171;font-weight:500;margin-top:0.5rem;text-align:center}
+  </style>
+</head>
+<body>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <h3>Work Status System</h3>
+      <p id="loadingMsg">Connecting to database...</p>
+    </div>
+  </div>
+
+
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header animate-fade-in">
+      <div class="header-logo">
+        <div class="logo-icon"><i class="fa-solid fa-folder-open"></i></div>
+        <div class="logo-text">
+          <h1>Work Status Logs</h1>
+          <p>Supabase Database Connection &bull; <span id="connectionSourceBadge" class="badge"><i class="fa-solid fa-circle-nodes"></i> Connected</span></p>
+        </div>
+      </div>
+      <div class="header-actions" style="display:flex;align-items:center;gap:0.75rem">
+        <a id="adminDashboardBtn" href="dashboard.html" class="btn btn-secondary" style="background:linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1)); border:1px solid rgba(99,102,241,0.3); color:#a5b4fc;"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+        <button id="createBtn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Record</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="dashboard-content animate-fade-in delay-200">
+      <!-- Filters -->
+      <aside class="filters-sidebar">
+        <div class="sidebar-header">
+          <h3><i class="fa-solid fa-sliders"></i> Filter Controls</h3>
+          <button id="resetFilters" class="btn-link-toggle" style="font-size:0.72rem"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+        </div>
+        <div class="filter-group">
+          <label>Module</label>
+          <div class="multiselect-dropdown" id="dropdownModuleContainer">
+            <button class="dropdown-btn" id="btnDropdownModule">All Modules <i class="fa-solid fa-chevron-down"></i></button>
+            <div class="dropdown-menu-checkboxes" id="checkboxModule"></div>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label>Type</label>
+          <div class="multiselect-dropdown" id="dropdownTypeContainer">
+            <button class="dropdown-btn" id="btnDropdownType">All Types <i class="fa-solid fa-chevron-down"></i></button>
+            <div class="dropdown-menu-checkboxes" id="checkboxType"></div>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label>Priority</label>
+          <select id="filterPriority"><option value="">All Priorities</option><option>High</option><option>Medium</option><option>Low</option></select>
+        </div>
+        <div class="filter-group">
+          <label>Assigned To</label>
+          <select id="filterAssigned"><option value="">All Members</option></select>
+        </div>
+        <div class="filter-group">
+          <label>Created After</label>
+          <div class="slider-control">
+            <input type="range" id="sliderDate" min="0" max="100" value="0">
+            <div class="slider-labels"><span id="sliderDateMinLabel">-</span><span id="sliderDateMaxLabel">-</span></div>
+            <span class="slider-value" id="sliderDateVal">Any Date</span>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label>Min Duration (Days)</label>
+          <div class="slider-control">
+            <input type="range" id="sliderDuration" min="0" max="100" value="0">
+            <div class="slider-labels"><span>0</span><span id="sliderDurationMaxLabel">-</span></div>
+            <span class="slider-value" id="sliderDurationVal">0 Days</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Table Container -->
+      <div style="display:flex;flex-direction:column;gap:0">
+        <div class="table-container">
+          <div class="table-header">
+            <h3><i class="fa-solid fa-table-list"></i> Record List
+              <button id="toggleFiltersBtn" class="btn-link-toggle" style="font-size:0.72rem;margin-left:0.5rem"><i class="fa-solid fa-eye-slash"></i> Hide Filters</button>
+            </h3>
+            <div class="table-header-search">
+              <div class="search-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="globalSearch" placeholder="Search records...">
+                <button id="searchClear">&times;</button>
+              </div>
+            </div>
+            <div class="header-inline-filters">
+              <div class="multiselect-dropdown" id="dropdownProjectContainer">
+                <button class="dropdown-btn" id="btnDropdownProject"><i class="fa-solid fa-folder-open" style="color:var(--primary);font-size:0.75rem"></i> All Projects <i class="fa-solid fa-chevron-down" style="font-size:0.65rem"></i></button>
+                <div class="dropdown-menu-checkboxes" id="checkboxProject"></div>
+              </div>
+              <div class="multiselect-dropdown" id="dropdownStatusContainer">
+                <button class="dropdown-btn" id="btnDropdownStatus"><i class="fa-solid fa-circle-half-stroke" style="color:var(--primary);font-size:0.75rem"></i> Status <i class="fa-solid fa-chevron-down" style="font-size:0.65rem"></i></button>
+                <div class="dropdown-menu-checkboxes" id="checkboxStatus"></div>
+              </div>
+              <select class="page-size-select" id="pageSizeSelect">
+                <option value="10">10 / page</option>
+                <option value="25">25 / page</option>
+                <option value="50">50 / page</option>
+                <option value="100">100 / page</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th class="sortable" data-sort="ID">ID <i class="fa-solid fa-sort"></i></th>
+                  <th class="sortable" data-sort="Title">Title <i class="fa-solid fa-sort"></i></th>
+                  <th class="sortable" data-sort="Type">Type <i class="fa-solid fa-sort"></i></th>
+                  <th class="sortable" data-sort="Project">Project <i class="fa-solid fa-sort"></i></th>
+                  <th class="sortable" data-sort="Module">Module <i class="fa-solid fa-sort"></i></th>
+                  <th class="sortable" data-sort="Priority">Priority <i class="fa-solid fa-sort"></i></th>
+                  <th class="sortable" data-sort="Status">Status <i class="fa-solid fa-sort"></i></th>
+                  <th class="sortable" data-sort="AssignedTo">Assigned To <i class="fa-solid fa-sort"></i></th>
+                  <th class="sortable" data-sort="CreatedDate">Created <i class="fa-solid fa-sort"></i></th>
+                  <th class="sortable" data-sort="Duration">Duration <i class="fa-solid fa-sort"></i></th>
+                  <th style="width: 80px; text-align: center;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+            <div class="empty-state hidden" id="emptyState">
+              <div class="empty-icon"><i class="fa-solid fa-inbox"></i></div>
+              <h4>No records found</h4>
+              <p>Try adjusting filters</p>
+            </div>
+          </div>
+          <div class="table-footer">
+            <span id="recordCount" class="text-muted"></span>
+            <div class="table-pagination" id="paginationButtons"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-tag" id="modalType">-</span>
+        <button class="close-modal" id="closeDetailModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-left-column">
+          <h2 id="modalTitle">-</h2>
+          <div class="modal-section"><h3>Description</h3><div class="description-box" id="modalDescription">-</div></div>
+          <div class="modal-section"><h3>Comments</h3><div class="comments-box" id="modalComments">-</div></div>
+        </div>
+        <div class="modal-right-column">
+          <h3 class="side-panel-header">Metadata</h3>
+          <div class="modal-meta-grid">
+            <div class="meta-item"><span class="meta-label">ID</span><span class="meta-val" id="modalID">-</span></div>
+            <div class="meta-item"><span class="meta-label">Project</span><span class="meta-val" id="modalProject">-</span></div>
+            <div class="meta-item"><span class="meta-label">Module</span><span class="meta-val" id="modalModule">-</span></div>
+            <div class="meta-item"><span class="meta-label">Priority</span><span class="meta-val" id="modalPriority">-</span></div>
+            <div class="meta-item"><span class="meta-label">Status</span><span class="meta-val" id="modalStatus">-</span></div>
+            <div class="meta-item"><span class="meta-label">Assigned To</span><span class="meta-val" id="modalAssigned">-</span></div>
+            <div class="meta-item"><span class="meta-label">Created By</span><span class="meta-val" id="modalReported">-</span></div>
+            <div class="meta-item"><span class="meta-label">Created Date</span><span class="meta-val" id="modalCreatedDate">-</span></div>
+            <div class="meta-item"><span class="meta-label">Start Date</span><span class="meta-val" id="modalStartDate">-</span></div>
+            <div class="meta-item"><span class="meta-label">Resolved Date</span><span class="meta-val" id="modalResolvedDate">-</span></div>
+            <div class="meta-item"><span class="meta-label">Duration</span><span class="meta-val" id="modalDuration">-</span></div>
+            <div class="meta-item"><span class="meta-label">Inform To</span><span class="meta-val" id="modalInformTo">-</span></div>
+          </div>
+          <div style="margin-top:1.5rem;display:flex;flex-direction:column;gap:0.5rem">
+            <div style="display:flex;gap:0.75rem">
+              <button id="editModalBtn" class="btn btn-secondary" style="flex:1;padding:0.5rem;font-size:0.85rem"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div id="createModal" class="modal fullscreen-modal">
+    <div class="modal-content form-modal-content">
+      <div class="modal-header" style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <span class="modal-tag" id="formModalTag">New Record</span>
+          <h2 id="formModalTitle" style="font-size:1.15rem; font-weight:700; color:var(--text-main); margin:0;">Add New Work Item</h2>
+        </div>
+        <button class="close-modal close-create-modal" style="font-size:1.75rem;">&times;</button>
+      </div>
+      <form id="createForm">
+        <div class="form-body">
+          <div class="form-split-container">
+            <!-- Main Column (75%) -->
+            <div class="form-main-col">
+              <div class="form-field">
+                <label>Title <span style="color:var(--color-bug)">*</span></label>
+                <input type="text" id="newTitle" placeholder="Enter task title" required style="font-size:1.05rem;font-weight:600;padding:0.75rem 1rem;">
+              </div>
+              <div class="form-field" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                <label>Description</label>
+                <textarea id="newDescription" style="flex:1; min-height:0; resize:none;" placeholder="Task description..."></textarea>
+              </div>
+              <div class="form-field" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                <label>Comments</label>
+                <textarea id="newComments" style="flex:1; min-height:0; resize:none;" placeholder="Status updates or comments..."></textarea>
+              </div>
+            </div>
+            <!-- Side Column (30%) -->
+            <div class="form-side-col">
+              <div class="form-field">
+                <label>Type</label>
+                <select id="newType"><option>Task</option><option>Feature</option><option>Bug</option><option>Support</option></select>
+              </div>
+              <div class="form-field">
+                <label>Priority</label>
+                <select id="newPriority"><option>Low</option><option>Medium</option><option>High</option></select>
+              </div>
+              <div class="form-field">
+                <label>Project</label>
+                <select id="newProject"><option value="">-- Select --</option><option>EE</option><option>AGEY</option></select>
+              </div>
+              <div class="form-field">
+                <label>Module</label>
+                <select id="newModule"><option value="">-- Select --</option><option>Profile</option><option>Bussiness</option><option>Vehicle</option><option>Proposal</option><option>Repayment</option><option>Migration</option></select>
+              </div>
+              <div class="form-field">
+                <label>Status</label>
+                <select id="newStatus"><option>New</option><option>Open</option><option>In Progress</option><option>Closed</option></select>
+              </div>
+              <div class="form-field">
+                <label>Assigned To</label>
+                <select id="newAssigned"><option value="">-- Select --</option><option>Mitul</option><option>Akanksha</option><option>Ekta</option><option>Prahlad</option></select>
+              </div>
+              <div class="form-field">
+                <label>Created By (Creator Email)</label>
+                <input type="text" id="newReported" placeholder="name@trigyn.com">
+              </div>
+              <div class="form-field">
+                <label>Inform To</label>
+                <input type="text" id="newInformTo" placeholder="Names">
+              </div>
+              <div class="form-field">
+                <label>Created Date</label>
+                <input type="date" id="newCreatedDate">
+              </div>
+              <div class="form-field">
+                <label>Start Date</label>
+                <input type="date" id="newStartDate">
+              </div>
+              <div class="form-field">
+                <label>Resolved Date</label>
+                <input type="date" id="newResolvedDate">
+              </div>
+              <div class="form-field">
+                <label>Duration (Days)</label>
+                <input type="number" id="newDuration" min="0" placeholder="0">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:1rem 1.5rem;background:rgba(255,255,255,0.02);border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:0.75rem">
+          <button type="button" class="btn btn-secondary close-create-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-cloud-arrow-up"></i> Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Load Supabase from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+  // ============================================================
+  // SUPABASE CONFIGURATION
+  // ============================================================
+  const ALLOWED_EMAILS = [
+    'mitul.shah@trigyn.com',
+    'ekta.pardeshi@trigyn.com',
+    'akanksha.waghmare@trigyn.com',
+    'pralhad.gadlegave@digitalindia.gov.in'
+  ];
+
+  const ADMIN_EMAIL = 'mitul.shah@trigyn.com';
+
+  const SUPABASE_URL  = "https://iueammxhintxldvzlpae.supabase.co";
+  const SUPABASE_ANON = "sb_publishable_JN2EyormTMMyV8un2m8ZCg_yNVQEAbE";
+
+  function getCurrentUserEmail() {
+    return localStorage.getItem('currentUserEmail') || 'ekta.pardeshi@trigyn.com';
+  }
+
+  // App State
+  let db = null;
+  let currentUser = null;
+  let allRecords = [];
+  let filteredRecords = [];
+  let sortColumn = 'ID';
+  let sortDirection = 'desc';
+  let currentPage = 1;
+  let rowsPerPage = 10;
+  let activeTaskId = null;
+  let syncInterval = null;
+
+  // Filter options
+  let uniqueProjects = [], uniqueModules = [], uniqueTypes = [], uniqueMembers = [];
+
+  // ============================================================
+  // Auth Helpers
+  // ============================================================
+  function isEmailAllowed(email) {
+    return ALLOWED_EMAILS.includes((email||'').toLowerCase().trim());
+  }
+
+  function isAdmin(email) {
+    return (email||'').toLowerCase().trim() === ADMIN_EMAIL;
+  }
+
+  function showLoginScreen() {
+    showLoading(false);
+    document.getElementById('loginOverlay').classList.remove('hidden');
+  }
+
+  function hideLoginScreen() {
+    document.getElementById('loginOverlay').classList.add('hidden');
+  }
+
+  function setLoginMsg(step, text, type) {
+    const el = document.getElementById(step === 1 ? 'loginMsg1' : 'loginMsg2');
+    el.className = 'login-msg ' + type;
+    el.innerText = text;
+  }
+
+  async function loadDashboard(user) {
+    currentUser = user;
+    document.getElementById('userEmailDisplay').innerText = user.email;
+
+    // Show Admin dashboard button if user is Mitul
+    if (isAdmin(user.email)) {
+      document.getElementById('adminDashboardBtn').classList.remove('hidden');
+    } else {
+      document.getElementById('adminDashboardBtn').classList.add('hidden');
+    }
+
+    hideLoginScreen();
+    showLoading(true);
+    setLoading('Loading records...');
+    setupEventListeners();
+    const ok = await initSupabase();
+    if (ok) { initFilters(); applyFilters(); }
+    showLoading(false);
+    syncInterval = setInterval(() => refreshData(true), 15000);
+  }
+
+  // ============================================================
+  // Date Helpers
+  // ============================================================
+  function formatDbDate(d) {
+    if (!d) return '';
+    const parts = d.split('-');
+    if (parts.length !== 3) return d;
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${parts[2].padStart(2,'0')} ${months[parseInt(parts[1],10)-1]} ${parts[0]}`;
+  }
+
+  function todayISO() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function displayDateToISO(s) {
+    if (!s) return null;
+    const p = s.trim().split(' ');
+    if (p.length !== 3) return null;
+    const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+    const m = months.indexOf(p[1].toLowerCase());
+    if (m === -1) return null;
+    return `${p[2]}-${String(m+1).padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+  }
+
+  function dateToExcelSerial(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    const epoch = new Date(1900,0,1);
+    const ms = new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime() - epoch.getTime();
+    return Math.round(ms/(86400*1000)) + 2;
+  }
+
+  // ============================================================
+  // Row Mapping
+  // ============================================================
+  function mapRow(t) {
+    return {
+      ID: t.id,
+      Title: t.title || '',
+      Description: t.description || '',
+      Type: t.type || 'Task',
+      Project: t.project || '',
+      Module: t.module || '',
+      Priority: t.priority || 'Low',
+      Status: t.status || 'New',
+      AssignedTo: t.assigned_to || '',
+      ReportedBy: t.reported_by || '',
+      CreatedDateISO: t.created_date || null,
+      CreatedDateRaw: t.created_date ? dateToExcelSerial(t.created_date) : null,
+      CreatedDate: formatDbDate(t.created_date),
+      StartDate: formatDbDate(t.start_date),
+      ResolvedDate: formatDbDate(t.resolved_date),
+      Duration: t.duration !== null && t.duration !== undefined ? Number(t.duration) : null,
+      InformTo: t.inform_to || '',
+      Comments: t.comments || ''
+    };
+  }
+
+  // ============================================================
+  // Supabase Fetch
+  // ============================================================
+  async function initSupabase() {
+    try {
+      const { data, error } = await db.from('tasks').select('*').order('id', { ascending: false });
+      if (error) throw error;
+      allRecords = (data || []).map(mapRow);
+      return true;
+    } catch (err) {
+      console.error('Supabase fetch error:', err);
+      return false;
+    }
+  }
+
+  async function refreshData(silent = true) {
+    if (!db) return;
+    try {
+      const { data, error } = await db.from('tasks').select('*').order('id', { ascending: false });
+      if (error) throw error;
+      allRecords = (data || []).map(mapRow);
+      applyFilters();
+    } catch(err) { console.error('Refresh error:', err); }
+  }
+
+  // ============================================================
+  // UI Helpers
+  // ============================================================
+  function setLoading(msg) {
+    document.getElementById('loadingMsg').innerText = msg || '';
+  }
+
+  function showLoading(show) {
+    const el = document.getElementById('loadingOverlay');
+    if (show) { el.classList.remove('hidden'); el.style.opacity='1'; }
+    else { el.style.opacity='0'; setTimeout(() => el.classList.add('hidden'), 300); }
+  }
+
+  // ============================================================
+  // Filters
+  // ============================================================
+  function initFilters() {
+    uniqueProjects = [...new Set(allRecords.map(r => r.Project || '(blank)'))].sort();
+    uniqueModules  = [...new Set(allRecords.map(r => r.Module || '(blank)'))].sort();
+    uniqueTypes    = [...new Set(allRecords.map(r => r.Type || '(blank)'))].sort();
+    uniqueMembers  = ['Mitul', 'Akanksha', 'Ekta', 'Prahlad'];
+
+    buildCheckboxes('checkboxProject', uniqueProjects, 'Project[]');
+    buildCheckboxes('checkboxModule', uniqueModules, 'Module[]');
+    buildCheckboxes('checkboxType', uniqueTypes, 'Type[]');
+    buildCheckboxes('checkboxStatus', ['New','Open','In Progress','Closed'], 'Status[]');
+
+    const sel = document.getElementById('filterAssigned');
+    sel.innerHTML = '<option value="">All Members</option>';
+    uniqueMembers.forEach(m => { const o=document.createElement('option'); o.value=m; o.innerText=m; sel.appendChild(o); });
+
+    // Date slider
+    const serials = allRecords.map(r=>r.CreatedDateRaw).filter(d=>typeof d==='number').sort((a,b)=>a-b);
+    const sl = document.getElementById('sliderDate');
+    if (serials.length) {
+      sl.min=serials[0]; sl.max=serials[serials.length-1]; sl.value=serials[0];
+      document.getElementById('sliderDateMinLabel').innerText=allRecords.find(r=>r.CreatedDateRaw===serials[0])?.CreatedDate||'';
+      document.getElementById('sliderDateMaxLabel').innerText=allRecords.find(r=>r.CreatedDateRaw===serials[serials.length-1])?.CreatedDate||'';
+      document.getElementById('sliderDateVal').innerText=allRecords.find(r=>r.CreatedDateRaw===serials[0])?.CreatedDate||'Any';
+    }
+
+    // Duration slider
+    const durs = allRecords.map(r=>r.Duration).filter(d=>d!==null&&!isNaN(d));
+    const maxD = durs.length ? Math.max(...durs) : 10;
+    const sd = document.getElementById('sliderDuration');
+    sd.min=0; sd.max=maxD; sd.value=0;
+    document.getElementById('sliderDurationMaxLabel').innerText=maxD+' Days';
+
+    // Default: uncheck Closed in Status
+    document.querySelectorAll('#checkboxStatus input[type="checkbox"]').forEach(cb => {
+      if (cb.value.toLowerCase()==='closed') cb.checked=false;
+      else { cb.checked=true; cb.parentElement.classList.add('checked'); }
+    });
+  }
+
+  function buildCheckboxes(containerId, values, name) {
+    const c = document.getElementById(containerId);
+    c.innerHTML='';
+    values.forEach(v => {
+      const label = document.createElement('label');
+      label.className='checkbox-option';
+      label.innerHTML=`<input type="checkbox" name="${name}" value="${v}" checked> ${v}`;
+      label.querySelector('input').addEventListener('change', () => { currentPage=1; applyFilters(); });
+      c.appendChild(label);
+    });
+  }
+
+  function getChecked(containerId) {
+    return [...document.querySelectorAll(`#${containerId} input:checked`)].map(cb=>cb.value);
+  }
+
+  function applyFilters() {
+    const q = (document.getElementById('globalSearch').value||'').toLowerCase().trim();
+    const selProj = getChecked('checkboxProject');
+    const selMod  = getChecked('checkboxModule');
+    const selType = getChecked('checkboxType');
+    const selStat = getChecked('checkboxStatus');
+    const prio = document.getElementById('filterPriority').value;
+    const assign = document.getElementById('filterAssigned').value;
+    const minDate = Number(document.getElementById('sliderDate').value) || 0;
+    const minDur = Number(document.getElementById('sliderDuration').value) || 0;
+
+    filteredRecords = allRecords.filter(r => {
+      if (q) {
+        const blob = [r.ID,r.Title,r.Description,r.Project,r.Module,r.Type,r.Priority,r.Status,r.AssignedTo,r.ReportedBy,r.Comments].join(' ').toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      if (selProj.length && !selProj.includes(r.Project || '(blank)')) return false;
+      if (selMod.length  && !selMod.includes(r.Module || '(blank)'))   return false;
+      if (selType.length && !selType.includes(r.Type || '(blank)'))     return false;
+      if (selStat.length && !selStat.includes(r.Status || '(blank)'))   return false;
+      if (prio && r.Priority!==prio) return false;
+      if (assign && r.AssignedTo!==assign) return false;
+      if (r.CreatedDateRaw && r.CreatedDateRaw < minDate) return false;
+      const dur = r.Duration!==null ? r.Duration : 0;
+      if (dur < minDur) return false;
+      return true;
+    });
+
+    renderTable();
+  }
+
+  // ============================================================
+  // Table Rendering
+  // ============================================================
+  function renderTable() {
+    filteredRecords.sort((a,b) => {
+      let va = a[sortColumn], vb = b[sortColumn];
+      if (sortColumn==='CreatedDate') { va=a.CreatedDateRaw||0; vb=b.CreatedDateRaw||0; }
+      if (sortColumn==='Duration') { va=a.Duration||0; vb=b.Duration||0; }
+      if (typeof va==='string') va=va.toLowerCase();
+      if (typeof vb==='string') vb=vb.toLowerCase();
+      if (va<vb) return sortDirection==='asc'?-1:1;
+      if (va>vb) return sortDirection==='asc'?1:-1;
+      return 0;
+    });
+
+    const total = filteredRecords.length;
+    const totalPages = Math.ceil(total/rowsPerPage)||1;
+    if (currentPage>totalPages) currentPage=totalPages;
+    if (currentPage<1) currentPage=1;
+    const start = (currentPage-1)*rowsPerPage;
+    const end = Math.min(start+rowsPerPage, total);
+    const page = filteredRecords.slice(start,end);
+
+    const count = document.getElementById('recordCount');
+    count.innerText = total===0 ? 'No records' : `Showing ${start+1}–${end} of ${total} (${allRecords.length} total)`;
+
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML='';
+    const empty = document.getElementById('emptyState');
+    const pag = document.querySelector('.table-pagination');
+    if (!total) { empty.classList.remove('hidden'); if(pag) pag.classList.add('hidden'); return; }
+    empty.classList.add('hidden');
+    if (pag) pag.classList.remove('hidden');
+
+    page.forEach((r, idx) => {
+      const tr = document.createElement('tr');
+      let sc='open';
+      if (r.Status.toLowerCase()==='in progress') sc='in-progress';
+      else if (r.Status.toLowerCase()==='closed') sc='closed';
+      else if (r.Status.toLowerCase()==='new') sc='new';
+      let pc='low';
+      if (r.Priority.toLowerCase()==='high') pc='high';
+      else if (r.Priority.toLowerCase()==='medium') pc='medium';
+      let tc='feature';
+      if (r.Type.toLowerCase()==='bug') tc='bug';
+
+      tr.innerHTML=`<td><span style="color:var(--text-muted);font-size:0.85rem">${start+idx+1}</span></td>
+        <td><strong>#${r.ID}</strong></td>
+        <td title="${r.Title}"><strong>${r.Title}</strong></td>
+        <td><span class="type-pill ${tc}">${r.Type}</span></td>
+        <td>${r.Project||'-'}</td>
+        <td>${r.Module||'-'}</td>
+        <td><span class="priority-pill ${pc}">${r.Priority||'Low'}</span></td>
+        <td><span class="status-pill ${sc}"><i class="fa-solid fa-circle" style="font-size:0.5rem"></i> ${r.Status||'New'}</span></td>
+        <td>${r.AssignedTo||'-'}</td>
+        <td>${r.CreatedDate||'-'}</td>
+        <td>${r.Duration!==null ? r.Duration+' Days' : '-'}</td>
+        <td style="text-align: center;">
+          <button class="btn btn-secondary edit-row-btn" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; background: var(--primary-light); border-color: var(--primary); color: var(--primary);"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+        </td>`;
+      tr.addEventListener('click', () => showDetail(r));
+      const editBtn = tr.querySelector('.edit-row-btn');
+      if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openCreateModal(r);
+        });
+      }
+      tbody.appendChild(tr);
+    });
+
+    renderPagination(totalPages);
+  }
+
+  function renderPagination(totalPages) {
+    const pag = document.getElementById('paginationButtons');
+    pag.innerHTML='';
+    const mk = (html, page, disabled=false, active=false) => {
+      const b=document.createElement('button');
+      b.className='page-btn'+(active?' active':'');
+      b.innerHTML=html; b.disabled=disabled;
+      if (!disabled) b.addEventListener('click', () => { currentPage=page; renderTable(); });
+      return b;
+    };
+    pag.appendChild(mk('<i class="fa-solid fa-angles-left"></i>', 1, currentPage===1));
+    pag.appendChild(mk('<i class="fa-solid fa-angle-left"></i>', currentPage-1, currentPage===1));
+    let s=Math.max(1,currentPage-2), e=Math.min(totalPages,s+4);
+    if (e-s<4) s=Math.max(1,e-4);
+    if (s>1) { pag.appendChild(mk('1',1)); if(s>2){const sp=document.createElement('span');sp.className='page-ellipsis';sp.innerText='...';pag.appendChild(sp);} }
+    for(let i=s;i<=e;i++) pag.appendChild(mk(String(i),i,false,i===currentPage));
+    if (e<totalPages) { if(e<totalPages-1){const sp=document.createElement('span');sp.className='page-ellipsis';sp.innerText='...';pag.appendChild(sp);} pag.appendChild(mk(String(totalPages),totalPages)); }
+    pag.appendChild(mk('<i class="fa-solid fa-angle-right"></i>', currentPage+1, currentPage===totalPages));
+    pag.appendChild(mk('<i class="fa-solid fa-angles-right"></i>', totalPages, currentPage===totalPages));
+  }
+
+  // ============================================================
+  // Detail Modal & Ownership Authorization Check
+  // ============================================================
+  function showDetail(r) {
+    activeTaskId = r.ID;
+    document.getElementById('modalType').innerText = r.Type;
+    document.getElementById('modalType').className = `modal-tag ${r.Type.toLowerCase()==='bug'?'bug-tag':''}`;
+    document.getElementById('modalTitle').innerText = r.Title;
+    document.getElementById('modalID').innerText = '#'+r.ID;
+    document.getElementById('modalProject').innerText = r.Project||'-';
+    document.getElementById('modalModule').innerText = r.Module||'-';
+    document.getElementById('modalPriority').innerText = r.Priority||'-';
+    document.getElementById('modalStatus').innerText = r.Status||'-';
+    document.getElementById('modalAssigned').innerText = r.AssignedTo||'-';
+    document.getElementById('modalReported').innerText = r.ReportedBy||'-';
+    document.getElementById('modalCreatedDate').innerText = r.CreatedDate||'-';
+    document.getElementById('modalStartDate').innerText = r.StartDate||'-';
+    document.getElementById('modalResolvedDate').innerText = r.ResolvedDate||'-';
+    document.getElementById('modalDuration').innerText = r.Duration!==null ? r.Duration+' Days' : '-';
+    document.getElementById('modalInformTo').innerText = r.InformTo||'-';
+    document.getElementById('modalDescription').innerText = r.Description||'No description provided.';
+    document.getElementById('modalComments').innerText = r.Comments||'No comments.';
+
+
+
+    document.getElementById('detailModal').classList.add('show');
+  }
+
+  // ============================================================
+  // CRUD Operations
+  // ============================================================
+  function formData() {
+    return {
+      title: document.getElementById('newTitle').value.trim(),
+      type: document.getElementById('newType').value,
+      project: document.getElementById('newProject').value,
+      module: document.getElementById('newModule').value,
+      priority: document.getElementById('newPriority').value,
+      status: document.getElementById('newStatus').value,
+      assigned_to: document.getElementById('newAssigned').value,
+      reported_by: document.getElementById('newReported').value.trim(), // Stored owner email
+      created_date: document.getElementById('newCreatedDate').value||null,
+      start_date: document.getElementById('newStartDate').value||null,
+      resolved_date: document.getElementById('newResolvedDate').value||null,
+      duration: document.getElementById('newDuration').value!=='' ? Number(document.getElementById('newDuration').value) : null,
+      inform_to: document.getElementById('newInformTo').value.trim(),
+      description: document.getElementById('newDescription').value.trim(),
+      comments: document.getElementById('newComments').value.trim()
+    };
+  }
+
+  function openCreateModal(record=null) {
+    activeTaskId = record ? record.ID : null;
+    document.getElementById('createForm').reset();
+    document.getElementById('formModalTag').innerText = record ? 'Edit Record' : 'New Record';
+    document.getElementById('formModalTitle').innerText = record ? `Edit Work Item #${record.ID}` : 'Add New Work Item';
+    if (!record) {
+      document.getElementById('newCreatedDate').value = todayISO();
+      document.getElementById('newReported').value = getCurrentUserEmail(); // Auto-populate owner
+    } else {
+      document.getElementById('newTitle').value = record.Title||'';
+      document.getElementById('newType').value = record.Type||'Task';
+      document.getElementById('newProject').value = record.Project||'';
+      document.getElementById('newModule').value = record.Module||'';
+      document.getElementById('newPriority').value = record.Priority||'Low';
+      document.getElementById('newStatus').value = record.Status||'New';
+      document.getElementById('newAssigned').value = record.AssignedTo||'';
+      document.getElementById('newReported').value = record.ReportedBy || getCurrentUserEmail();
+      document.getElementById('newCreatedDate').value = record.CreatedDateISO||'';
+      document.getElementById('newStartDate').value = displayDateToISO(record.StartDate)||'';
+      document.getElementById('newResolvedDate').value = displayDateToISO(record.ResolvedDate)||'';
+      document.getElementById('newDuration').value = record.Duration!==null ? record.Duration : '';
+      document.getElementById('newInformTo').value = record.InformTo||'';
+      document.getElementById('newDescription').value = record.Description||'';
+      document.getElementById('newComments').value = record.Comments||'';
+    }
+    
+
+
+    document.getElementById('detailModal').classList.remove('show');
+    document.getElementById('createModal').classList.add('show');
+  }
+
+  async function saveRecord(e) {
+    e.preventDefault();
+    const data = formData();
+    if (!data.title) { alert('Title is required!'); return; }
+    showLoading(true);
+    try {
+      if (activeTaskId===null) {
+        const { error } = await db.from('tasks').insert([data]);
+        if (error) throw error;
+      } else {
+        const { error } = await db.from('tasks').update(data).eq('id', activeTaskId);
+        if (error) throw error;
+      }
+      document.getElementById('createModal').classList.remove('show');
+      await refreshData(false);
+    } catch(err) { alert('Save failed: '+err.message); }
+    finally { showLoading(false); }
+  }
+
+  async function deleteRecord() {
+    if (activeTaskId===null) return;
+    const task = allRecords.find(r=>r.ID===activeTaskId);
+    if (!task) return;
+
+    // Prompt user for their identity email to confirm deletion
+    const email = prompt("Enter your email to verify delete permission:");
+    if (email === null) return; // User cancelled
+
+    const cleanEmail = email.trim().toLowerCase();
+    const isUserAdmin = isAdmin(cleanEmail);
+    const isOwner = (task.ReportedBy || '').toLowerCase().trim() === cleanEmail;
+
+    if (!isUserAdmin && !isOwner) {
+      alert("Delete failed: Only the creator of this task or the administrator can delete this record.");
+      return;
+    }
+
+    if (!confirm(`Delete Task #${activeTaskId}? This cannot be undone.`)) return;
+    showLoading(true);
+    try {
+      const { error } = await db.from('tasks').delete().eq('id', activeTaskId);
+      if (error) throw error;
+      document.getElementById('createModal').classList.remove('show');
+      activeTaskId=null;
+      await refreshData(false);
+    } catch(err) { alert('Delete failed: '+err.message); }
+    finally { showLoading(false); }
+  }
+
+  // ============================================================
+  // Event Listeners
+  // ============================================================
+  function setupEventListeners() {
+    // Search
+    const gs = document.getElementById('globalSearch');
+    const sc = document.getElementById('searchClear');
+    gs.addEventListener('input', () => { sc.style.display=gs.value?'block':'none'; currentPage=1; applyFilters(); });
+    sc.addEventListener('click', () => { gs.value=''; sc.style.display='none'; currentPage=1; applyFilters(); });
+
+    // Dropdowns
+    ['filterPriority','filterAssigned'].forEach(id => document.getElementById(id).addEventListener('change', () => { currentPage=1; applyFilters(); }));
+
+    // Sliders
+    document.getElementById('sliderDate').addEventListener('input', (e) => {
+      const v=Number(e.target.value);
+      const match=allRecords.find(r=>r.CreatedDateRaw&&Math.abs(r.CreatedDateRaw-v)<=1);
+      document.getElementById('sliderDateVal').innerText = match?match.CreatedDate:formatDbDate(null);
+      currentPage=1; applyFilters();
+    });
+    document.getElementById('sliderDuration').addEventListener('input', (e) => {
+      const v=Number(e.target.value);
+      document.getElementById('sliderDurationVal').innerText=v+' '+(v===1?'Day':'Days');
+      currentPage=1; applyFilters();
+    });
+
+    // Reset
+    document.getElementById('resetFilters').addEventListener('click', () => {
+      document.getElementById('globalSearch').value='';
+      document.getElementById('searchClear').style.display='none';
+      document.getElementById('filterPriority').value='';
+      document.getElementById('filterAssigned').value='';
+      document.querySelectorAll('#checkboxProject input,#checkboxModule input,#checkboxType input').forEach(cb=>{cb.checked=false;cb.parentElement.classList.remove('checked');});
+      document.querySelectorAll('#checkboxStatus input').forEach(cb=>{
+        cb.checked = cb.value.toLowerCase()!=='closed';
+        cb.checked ? cb.parentElement.classList.add('checked') : cb.parentElement.classList.remove('checked');
+      });
+      const sl=document.getElementById('sliderDate'); if(sl.min) sl.value=sl.min;
+      document.getElementById('sliderDuration').value=0;
+      document.getElementById('sliderDurationVal').innerText='0 Days';
+      currentPage=1; applyFilters();
+    });
+
+    // Sorting
+    document.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const col=th.dataset.sort;
+        sortDirection = sortColumn===col ? (sortDirection==='asc'?'desc':'asc') : 'asc';
+        sortColumn=col;
+        document.querySelectorAll('th.sortable i').forEach(i=>i.className='fa-solid fa-sort');
+        th.querySelector('i').className='fa-solid fa-sort-'+(sortDirection==='asc'?'up':'down');
+        renderTable();
+      });
+    });
+
+    // Page size
+    document.getElementById('pageSizeSelect').addEventListener('change', (e) => { rowsPerPage=parseInt(e.target.value,10); currentPage=1; renderTable(); });
+
+    // Create button
+    document.getElementById('createBtn').addEventListener('click', () => openCreateModal());
+
+    // Form submit
+    document.getElementById('createForm').addEventListener('submit', saveRecord);
+
+    // Close modals
+    document.getElementById('closeDetailModal').addEventListener('click', () => document.getElementById('detailModal').classList.remove('show'));
+    document.querySelectorAll('.close-create-modal').forEach(btn => btn.addEventListener('click', () => document.getElementById('createModal').classList.remove('show')));
+    document.getElementById('detailModal').addEventListener('click', e => { if(e.target===document.getElementById('detailModal')) document.getElementById('detailModal').classList.remove('show'); });
+    document.getElementById('createModal').addEventListener('click', e => { if(e.target===document.getElementById('createModal')) document.getElementById('createModal').classList.remove('show'); });
+
+    // Edit inside detail modal
+    document.getElementById('editModalBtn').addEventListener('click', () => {
+      const r=allRecords.find(r=>r.ID===activeTaskId);
+      if(r) openCreateModal(r);
+    });
+
+    // Escape key
+    document.addEventListener('keydown', e => {
+      if (e.key==='Escape') {
+        document.getElementById('detailModal').classList.remove('show');
+        document.getElementById('createModal').classList.remove('show');
+      }
+    });
+
+    // Toggle filters sidebar
+    document.getElementById('toggleFiltersBtn').addEventListener('click', () => {
+      const dc=document.querySelector('.dashboard-content');
+      const hidden=dc.classList.toggle('filters-hidden');
+      document.getElementById('toggleFiltersBtn').innerHTML=hidden?'<i class="fa-solid fa-eye"></i> Show Filters':'<i class="fa-solid fa-eye-slash"></i> Hide Filters';
+    });
+
+    // Multiselect dropdowns
+    [['btnDropdownProject','dropdownProjectContainer'],['btnDropdownStatus','dropdownStatusContainer'],['btnDropdownModule','dropdownModuleContainer'],['btnDropdownType','dropdownTypeContainer']].forEach(([btnId,ctnId]) => {
+      const btn=document.getElementById(btnId);
+      const ctn=document.getElementById(ctnId);
+      if (btn&&ctn) btn.addEventListener('click', e => {
+        e.stopPropagation();
+        document.querySelectorAll('.multiselect-dropdown').forEach(d=>{ if(d!==ctn) d.classList.remove('open'); });
+        ctn.classList.toggle('open');
+      });
+    });
+    document.addEventListener('click', () => document.querySelectorAll('.multiselect-dropdown').forEach(d=>d.classList.remove('open')));
+    document.querySelectorAll('.dropdown-menu-checkboxes').forEach(m=>m.addEventListener('click',e=>e.stopPropagation()));
+  }
+
+  // ============================================================
+  // Boot
+  // ============================================================
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Init Supabase Client
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+
+
+    setupEventListeners();
+    setLoading('Loading records...');
+    const ok = await initSupabase();
+    if (ok) { initFilters(); applyFilters(); }
+    showLoading(false);
+    syncInterval = setInterval(() => refreshData(true), 15000);
+  });
+  </script>
+</body>
+</html>
