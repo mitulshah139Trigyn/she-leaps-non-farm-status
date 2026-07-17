@@ -395,6 +395,12 @@
             <span class="slider-value" id="sliderDurationVal">0 Days</span>
           </div>
         </div>
+        <div class="filter-group" style="margin-top:0.5rem; padding-top:1rem; border-top:1px solid var(--border-color)">
+          <div style="display:flex; align-items:center; gap:0.5rem; cursor:pointer">
+            <input type="checkbox" id="showArchive" style="width:16px; height:16px; accent-color:var(--primary); cursor:pointer">
+            <label for="showArchive" style="margin:0; font-size:0.8rem; font-weight:600; text-transform:none; cursor:pointer; color:var(--text-main)">Show Archives (Closed > 7 Days)</label>
+          </div>
+        </div>
       </aside>
 
       <!-- Table -->
@@ -696,11 +702,27 @@
       CreatedDateRaw: t.created_date ? dateToExcelSerial(t.created_date) : null,
       CreatedDate: formatDbDate(t.created_date),
       StartDate: formatDbDate(t.start_date),
+      ResolvedDateISO: t.resolved_date || null,
       ResolvedDate: formatDbDate(t.resolved_date),
       Duration: t.duration !== null && t.duration !== undefined ? Number(t.duration) : null,
       InformTo: t.inform_to || '',
       Comments: t.comments || ''
     };
+  }
+
+  function isClosedOlderThan7Days(r) {
+    if ((r.Status || '').toLowerCase() !== 'closed') return false;
+    const dateStr = r.ResolvedDateISO || r.CreatedDateISO;
+    if (!dateStr) return false;
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return false;
+    const resolvedDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    resolvedDate.setHours(0,0,0,0);
+    const diffTime = today.getTime() - resolvedDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 7;
   }
 
   // ============================================================
@@ -885,9 +907,10 @@
     const prio = document.getElementById('filterPriority').value;
     const assign = document.getElementById('filterAssigned').value;
     const minDate = Number(document.getElementById('sliderDate').value) || 0;
-    const minDur = Number(document.getElementById('sliderDuration').value) || 0;
+    const showArchive = document.getElementById('showArchive').checked;
 
     filteredRecords = allRecords.filter(r => {
+      if (!showArchive && isClosedOlderThan7Days(r)) return false;
       if (q) {
         const blob = [r.ID,r.Title,r.Description,r.Project,r.Module,r.Type,r.Priority,r.Status,r.AssignedTo,r.ReportedBy,r.Comments].join(' ').toLowerCase();
         if (!blob.includes(q)) return false;
@@ -1130,6 +1153,7 @@
 
     // Dropdowns
     ['filterPriority','filterAssigned'].forEach(id => document.getElementById(id).addEventListener('change', () => { currentPage=1; applyFilters(); }));
+    document.getElementById('showArchive').addEventListener('change', () => { currentPage=1; applyFilters(); });
 
     // Sliders
     document.getElementById('sliderDate').addEventListener('input', (e) => {
@@ -1158,6 +1182,7 @@
       const sl=document.getElementById('sliderDate'); if(sl.min) sl.value=sl.min;
       document.getElementById('sliderDuration').value=0;
       document.getElementById('sliderDurationVal').innerText='0 Days';
+      document.getElementById('showArchive').checked = false;
       currentPage=1; applyFilters();
     });
 
