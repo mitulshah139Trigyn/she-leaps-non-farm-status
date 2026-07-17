@@ -265,15 +265,17 @@
 
   <div class="app-container">
     <!-- Header -->
-    <header class="app-header animate-fade-in">
-      <div class="header-logo">
+    <header class="app-header animate-fade-in" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; width: 100%">
+      <div class="header-logo" style="display: flex; align-items: center; gap: 1rem">
         <div class="logo-icon"><i class="fa-solid fa-folder-open"></i></div>
-        <div class="logo-text">
-          <h1>Work Status Logs</h1>
-          <p>Supabase Database Connection &bull; <span id="connectionSourceBadge" class="badge"><i class="fa-solid fa-circle-nodes"></i> Connected</span></p>
-        </div>
       </div>
-      <div class="header-actions" style="display:flex;align-items:center;gap:0.75rem">
+      <div class="logo-text" style="text-align: center; display: flex; flex-direction: column; align-items: center">
+        <h1 style="font-size: 1.6rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent">She-Leaps-Non-Farm Logs</h1>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 0.4rem">
+          Supabase Live &bull; <span id="connectionSourceBadge" class="badge"><i class="fa-solid fa-circle-nodes"></i> Connecting...</span>
+        </p>
+      </div>
+      <div class="header-actions" style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem">
         <a id="adminDashboardBtn" href="dashboard.html" class="btn btn-secondary" style="background:linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1)); border:1px solid rgba(99,102,241,0.3); color:#a5b4fc;"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
         <button id="createBtn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Record</button>
       </div>
@@ -695,9 +697,11 @@
       const { data, error } = await db.from('tasks').select('*').order('id', { ascending: false });
       if (error) throw error;
       allRecords = (data || []).map(mapRow);
+      setBadge('success', '<i class="fa-solid fa-circle-check"></i> Connected');
       return true;
     } catch (err) {
       console.error('Supabase fetch error:', err);
+      setBadge('danger', '<i class="fa-solid fa-triangle-exclamation"></i> Connection Failed');
       return false;
     }
   }
@@ -723,6 +727,14 @@
     const el = document.getElementById('loadingOverlay');
     if (show) { el.classList.remove('hidden'); el.style.opacity='1'; }
     else { el.style.opacity='0'; setTimeout(() => el.classList.add('hidden'), 300); }
+  }
+
+  function setBadge(type, html) {
+    const b = document.getElementById('connectionSourceBadge');
+    if (b) {
+      b.className = 'badge badge-' + type;
+      b.innerHTML = html;
+    }
   }
 
   // ============================================================
@@ -792,6 +804,7 @@
     const prio = document.getElementById('filterPriority').value;
     const assign = document.getElementById('filterAssigned').value;
     const minDate = Number(document.getElementById('sliderDate').value) || 0;
+    const minDur = Number(document.getElementById('sliderDuration').value) || 0;
     const showArchive = document.getElementById('showArchive').checked;
 
     filteredRecords = allRecords.filter(r => {
