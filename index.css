@@ -3,33 +3,35 @@
    ========================================== */
 
 :root {
-  /* Color Palette */
-  --bg-app: #0b0f19;
-  --bg-sidebar: #111827;
-  --bg-card: rgba(20, 29, 47, 0.65);
-  --bg-card-hover: rgba(28, 41, 67, 0.85);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-color-hover: rgba(99, 102, 241, 0.4);
+  /* Color Palette - Premium Light Theme */
+  --bg-app: #f3f4f6;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f9fafb;
+  --bg-modal: #ffffff;
+  --bg-input: #f9fafb;
+  --border-color: #e5e7eb;
+  --border-color-hover: #6366f1;
   
-  --primary: #6366f1; /* Indigo */
-  --primary-hover: #4f46e5;
-  --primary-light: rgba(99, 102, 241, 0.15);
+  --primary: #4f46e5; /* Indigo */
+  --primary-hover: #3730a3;
+  --primary-light: rgba(79, 70, 229, 0.08);
   
-  --text-main: #f3f4f6;
-  --text-muted: #9ca3af;
+  --text-main: #1f2937;
+  --text-muted: #4b5563;
   --text-inverse: #ffffff;
   
   /* Status Colors */
-  --color-open: #f59e0b; /* Amber */
-  --color-open-bg: rgba(245, 158, 11, 0.15);
-  --color-progress: #3b82f6; /* Blue */
-  --color-progress-bg: rgba(59, 130, 246, 0.15);
-  --color-closed: #10b981; /* Emerald */
-  --color-closed-bg: rgba(16, 185, 129, 0.15);
-  --color-bug: #ef4444; /* Red */
-  --color-bug-bg: rgba(239, 68, 68, 0.15);
+  --color-open: #d97706; /* Amber */
+  --color-open-bg: rgba(217, 119, 6, 0.12);
+  --color-progress: #2563eb; /* Blue */
+  --color-progress-bg: rgba(37, 99, 235, 0.12);
+  --color-closed: #059669; /* Emerald */
+  --color-closed-bg: rgba(5, 150, 105, 0.12);
+  --color-bug: #dc2626; /* Red */
+  --color-bug-bg: rgba(220, 38, 38, 0.12);
   
-  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --card-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
   --transition-speed: 0.25s;
 }
 
@@ -58,11 +60,11 @@ body {
   background: var(--bg-app);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1f2937;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: #94a3b8;
 }
 
 /* Layout Wrapper */
@@ -743,7 +745,7 @@ table {
 }
 
 th {
-  background: rgba(17, 24, 39, 0.98);
+  background: rgba(0, 0, 0, 0.02);
   padding: 1rem;
   font-weight: 600;
   color: var(--text-main);
@@ -758,7 +760,7 @@ td:nth-child(1) {
   position: sticky;
   left: 0;
   z-index: 3;
-  background: #0e1525;
+  background: var(--bg-card);
   min-width: 50px;
 }
 
@@ -768,7 +770,7 @@ td:nth-child(2) {
   position: sticky;
   left: 50px;
   z-index: 3;
-  background: #0e1525;
+  background: var(--bg-card);
   min-width: 65px;
 }
 
@@ -778,9 +780,9 @@ td:nth-child(3) {
   position: sticky;
   left: 115px;
   z-index: 2;
-  background: #0e1525;
+  background: var(--bg-card);
   min-width: 200px;
-  box-shadow: 4px 0 12px rgba(0,0,0,0.35);
+  box-shadow: 4px 0 12px rgba(0,0,0,0.05);
 }
 
 /* Header sticky cells need higher z-index */
@@ -788,13 +790,13 @@ thead th:nth-child(1),
 thead th:nth-child(2),
 thead th:nth-child(3) {
   z-index: 5;
-  background: rgba(13, 19, 35, 0.99);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 tr:hover td:nth-child(1),
 tr:hover td:nth-child(2),
 tr:hover td:nth-child(3) {
-  background: #12203a;
+  background: var(--bg-card-hover);
 }
 
 th.sortable {
@@ -830,7 +832,7 @@ td {
 }
 
 tr {
-  background: rgba(20, 29, 47, 0.2);
+  background: var(--bg-card);
   transition: background var(--transition-speed) ease;
   cursor: pointer;
 }
@@ -1190,7 +1192,7 @@ tr:hover {
 .form-field input[type="date"],
 .form-field select,
 .form-field textarea {
-  background: rgba(17, 24, 39, 0.6);
+  background: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   color: var(--text-main);
@@ -1206,7 +1208,7 @@ tr:hover {
 .form-field select:focus,
 .form-field textarea:focus {
   border-color: var(--primary);
-  background: rgba(17, 24, 39, 0.9);
+  background: var(--bg-card);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
