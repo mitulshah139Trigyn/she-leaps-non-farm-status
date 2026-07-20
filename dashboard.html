@@ -1117,6 +1117,8 @@
     try {
       if (!db) throw new Error('Supabase not connected');
       if (activeTaskId===null) {
+        const nextId = Math.max(...allRecords.map(r => Number(r.ID) || 0), 0) + 1;
+        data.id = nextId;
         const { error } = await db.from('tasks').insert([data]);
         if (error) throw error;
       } else {
